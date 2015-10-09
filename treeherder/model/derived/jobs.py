@@ -82,7 +82,7 @@ class JobsModel(TreeherderModelBase):
         "result_set": {
             "id": "rs.id",
             "revision_hash": "rs.revision_hash",
-            "revision": "revision.revision",
+            "revision": "revision.short_revision",
             "author": "rs.author",
             "push_timestamp": "rs.push_timestamp",
             "last_modified": "rs.last_modified"
@@ -784,14 +784,14 @@ into chunks of chunk_size size. Returns the number of result sets deleted"""
         the right repository in builds4hr/running/pending.  So we ingest those
         bad resultsets/revisions as non-active so that we don't keep trying
         to re-ingest them.  Allowing this query to retrieve non ``active``
-        resultsets means we will avoid re-doing that work by detacting that
+        resultsets means we will avoid re-doing that work by detecting that
         we've already ingested it.
 
         But we skip ingesting the job, because the resultset is not active.
         """
 
         replacement = ",".join(["%s"] * len(revision_list))
-        replacement = " AND revision IN (" + replacement + ") "
+        replacement = " AND revision.short_revision IN (" + replacement + ") "
 
         proc = "jobs.selects.get_revision_resultset_lookup"
         lookups = self.execute(
@@ -800,7 +800,7 @@ into chunks of chunk_size size. Returns the number of result sets deleted"""
             debug_show=self.DEBUG,
             replace=[replacement],
             return_type="dict",
-            key_column="revision"
+            key_column="short_revision"
         )
         return lookups
 
@@ -849,6 +849,9 @@ into chunks of chunk_size size. Returns the number of result sets deleted"""
             replace=[where_in_clause],
         )
 
+        print "result_set_details"
+        print result_set_details
+
         # Aggregate the revisions by result_set_id
         aggregate_details = {}
         for detail in result_set_details:
@@ -858,7 +861,7 @@ into chunks of chunk_size size. Returns the number of result sets deleted"""
 
             aggregate_details[detail['result_set_id']].append(
                 {
-                    'revision': detail['revision'],
+                    'revision': detail['short_revision'],
                     'author': detail['author'],
                     'repository_id': detail['repository_id'],
                     'comments': detail['comments'],
@@ -1702,14 +1705,20 @@ into chunks of chunk_size size. Returns the number of result sets deleted"""
         # TODO: Confirm whether we need to do a lookup in this loop in the
         #   memcache to reduce query overhead
         for result in result_sets:
-
+            top_revision = result['revisions'][-1]
+            short_top_revision = top_revision['revision'][:12]
             revision_hash_placeholders.append(
                 [
                     result.get('author', 'unknown@somewhere.com'),
                     result['revision_hash'],
+                    top_revision['revision'],
+                    short_top_revision,
                     result['push_timestamp'],
                     result.get('active_status', 'active'),
-                    result['revision_hash']
+                    result['revision_hash'],
+                    top_revision['revision'],
+                    short_top_revision
+
                 ]
             )
             where_in_list.append('%s')
@@ -1731,18 +1740,25 @@ into chunks of chunk_size size. Returns the number of result sets deleted"""
                 )
 
                 repository_id = repository_id_lookup[rev_datum['repository']]
+
+                # @CAMD: do we want to check for dupes based on the short revision?
+                # we may have to in the short run.  But, eventually, we may get
+                # false dupes due to the inaccuracy of short_revision.
+                short_revision = rev_datum['revision'][:12]
                 revision_placeholders.append(
                     [rev_datum['revision'],
+                     short_revision,
                      rev_datum['author'],
                      comment,
                      repository_id,
                      rev_datum['revision'],
+                     short_revision,
                      repository_id]
                 )
 
-                all_revisions.append(rev_datum['revision'])
+                all_revisions.append(short_revision)
                 rev_where_in_list.append('%s')
-                revision_to_rhash_lookup[rev_datum['revision']] = result['revision_hash']
+                revision_to_rhash_lookup[short_revision] = result['revision_hash']
 
         # Retrieve a list of revision_hashes that have already been stored
         # in the list of unique_revision_hashes. Use it to determine the new
@@ -1809,7 +1825,7 @@ into chunks of chunk_size size. Returns the number of result sets deleted"""
             proc='jobs.selects.get_revisions',
             placeholders=all_revisions,
             replace=[rev_where_in_clause],
-            key_column='revision',
+            key_column='short_revision',
             return_type='dict',
             debug_show=self.DEBUG
         )

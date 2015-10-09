@@ -324,7 +324,7 @@ def test_store_result_set_data(jm, initial_data, sample_resultset):
     )
     revision_ids = jm.get_dhub().execute(
         proc="jobs_test.selects.revision_ids",
-        key_column='revision',
+        key_column='short_revision',
         return_type='dict'
     )
 
@@ -334,7 +334,7 @@ def test_store_result_set_data(jm, initial_data, sample_resultset):
     for datum in sample_resultset:
         revision_hashes.add(datum['revision_hash'])
         for revision in datum['revisions']:
-            revisions.add(revision['revision'])
+            revisions.add(revision['revision'][:12])
 
     jm.disconnect()
 

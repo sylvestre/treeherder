@@ -224,14 +224,15 @@ def test_job_error_lines(webapp, eleven_jobs_stored, jm, failure_lines, classifi
 
     exp_failure_keys = ["id", "job_guid", "repository", "action", "line",
                         "test", "subtest", "status", "expected", "message",
-                        "signature", "level", "created", "modified", "matches"]
+                        "signature", "level", "created", "modified", "matches",
+                        "best_classification", "best_is_verified"]
 
     assert set(failures[0].keys()) == set(exp_failure_keys)
 
     matches = failures[0]["matches"]
     assert isinstance(matches, list)
 
-    exp_matches_keys = ["id", "matcher", "score", "is_best", "classified_failure"]
+    exp_matches_keys = ["id", "matcher", "score", "classified_failure"]
 
     assert set(matches[0].keys()) == set(exp_matches_keys)
 

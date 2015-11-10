@@ -143,8 +143,16 @@ class FailureMatchSerializer(serializers.ModelSerializer):
         exclude = ['failure_line']
 
 
+class ClassifiedFailureSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.ClassifiedFailure
+        exclude = ['failure_lines']
+
+
 class FailureLineNoStackSerializer(serializers.ModelSerializer):
     matches = FailureMatchSerializer(many=True)
+    classified_failures = ClassifiedFailureSerializer(many=True)
 
     class Meta:
         model = models.FailureLine

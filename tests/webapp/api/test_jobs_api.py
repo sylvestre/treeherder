@@ -225,7 +225,7 @@ def test_job_error_lines(webapp, eleven_jobs_stored, jm, failure_lines, classifi
     exp_failure_keys = ["id", "job_guid", "repository", "action", "line",
                         "test", "subtest", "status", "expected", "message",
                         "signature", "level", "created", "modified", "matches",
-                        "best_classification", "best_is_verified"]
+                        "best_classification", "best_is_verified", "classified_failures"]
 
     assert set(failures[0].keys()) == set(exp_failure_keys)
 

@@ -4,6 +4,7 @@ from rest_framework import routers
 
 from treeherder.webapp.api import (artifact,
                                    bug,
+                                   classifiedfailure,
                                    failureline,
                                    job_log_url,
                                    jobs,
@@ -102,6 +103,9 @@ default_router.register(r'job-exclusion', refdata.JobExclusionViewSet)
 default_router.register(r'matcher', refdata.MatcherViewSet)
 default_router.register(r'failure-line', failureline.FailureLineViewSet,
                         base_name='failure-line')
+default_router.register(r'classified-failure',
+                        classifiedfailure.ClassifiedFailureViewSet,
+                        base_name='classified-failure')
 default_router.register(r'performance/alertsummary',
                         performance_data.PerformanceAlertSummaryViewSet,
                         base_name='performance-alert-summaries')

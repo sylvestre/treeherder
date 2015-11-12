@@ -4,12 +4,12 @@
 
     <li ng-repeat="line in failureLines"
         class="failure-line"
-        ng-class="{'classified-line': line.matches.length }">
-      <span><strong>{{line.matches | classified}}</strong></span>
-      <span ng-if="line.matches.length">
-          <span ng-repeat="match in line.matches">
-              <a href="{{:: getBugUrl(match.classified_failure.bug_number) }}"
-                 target="_blank">{{::match.classified_failure.bug_number}}</a>
+        ng-class="{'classified-line': line.best_classification }">
+      <span><strong>{{line | classified}}</strong></span>
+      <span ng-if="line.classified_failures.length">
+          <span ng-repeat="cf in line.classified_failures">
+              <a href="{{::getBugUrl(cf.bug_number) }}"
+                 target="_blank">{{::cf.bug_number}}</a>
           </span>
       </span>
       <span ng-if="line.action === 'test_result'">

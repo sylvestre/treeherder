@@ -136,23 +136,24 @@ class ClassifiedFailureSerializer(serializers.ModelSerializer):
 
 
 class FailureMatchSerializer(serializers.ModelSerializer):
-    classified_failure = ClassifiedFailureSerializer()
 
     class Meta:
         model = models.FailureMatch
         exclude = ['failure_line']
 
 
-class ClassifiedFailureSerializer(serializers.ModelSerializer):
+class JSONSerializerField(serializers.Field):
+    def to_internal_value(self, data):
+        return data
 
-    class Meta:
-        model = models.ClassifiedFailure
-        exclude = ['failure_lines']
+    def to_representation(self, value):
+        return value
 
 
 class FailureLineNoStackSerializer(serializers.ModelSerializer):
     matches = FailureMatchSerializer(many=True)
     classified_failures = ClassifiedFailureSerializer(many=True)
+    unstructured_bugs = JSONSerializerField(read_only=True)
 
     class Meta:
         model = models.FailureLine

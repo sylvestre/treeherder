@@ -632,6 +632,34 @@ class FailureLine(models.Model):
         self.best_is_verified = True
         self.save()
 
+    def _serialized_components(self):
+        if self.action == "test_result":
+            return ["TEST-UNEXPECTED-%s" % self.status.upper(),
+                    self.test]
+        if self.action == "log":
+            return [self.level.upper(),
+                    self.message.split("\n")[0]]
+
+    def unstructured_bugs(self):
+        components = self._serialized_components()
+        if not components:
+            return []
+
+        # Importing this at the top level causes circular import misery
+        from treeherder.model.derived import JobsModel
+        with JobsModel(self.repository.name) as jm:
+            job_id = jm.get_job_ids_by_guid([self.job_guid])[self.job_guid]["id"]
+            print job_id
+            bug_suggestions = jm.filter_bug_suggestions(jm.bug_suggestions(job_id))
+
+        rv = []
+        for item in bug_suggestions:
+            if all(component in item["search"] for component in components):
+                print "****", item
+                rv.extend(item["bugs"]["open_recent"])
+
+        return rv
+
 
 class ClassifiedFailure(models.Model):
     id = BigAutoField(primary_key=True)

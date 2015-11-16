@@ -333,6 +333,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 MIRROR_CLASSIFICATIONS = True
 ES_HOST = "http://of-elasticsearch-zlb.webapp.scl3.mozilla.com:9200"
 
+# Enable integration between autoclassifier and jobs
+AUTOCLASSIFY_JOBS = env.bool("TREEHERDER_AUTOCLASSIFY_JOBS", default=False)
+
 # timeout for requests to external sources
 # like ftp.mozilla.org or hg.mozilla.org
 TREEHERDER_REQUESTS_TIMEOUT = 30

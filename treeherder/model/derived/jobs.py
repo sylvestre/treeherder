@@ -482,6 +482,9 @@ class JobsModel(TreeherderModelBase):
         return rv
 
     def update_after_autoclassification(self, job_id):
+        if not settings.AUTOCLASSIFY_JOBS:
+            return
+
         if self.fully_autoclassified(job_id) and len(self.get_job_note_list(job_id)) == 0:
             self.insert_autoclassify_job_note(job_id)
 
@@ -502,6 +505,9 @@ class JobsModel(TreeherderModelBase):
         return num_failure_lines == len(bug_suggestion_lines)
 
     def insert_autoclassify_job_note(self, job_id):
+        if not settings.AUTOCLASSIFY_JOBS:
+            return
+
         job = self.get_job(job_id)[0]
 
         failure_lines = FailureLine.objects.filter(

@@ -481,3 +481,9 @@ def client_credentials(request, api_user):
     request.addfinalizer(fin)
 
     return client_credentials
+
+
+@pytest.fixture
+def mock_autoclassify_jobs_true(monkeypatch):
+    from django.conf import settings
+    monkeypatch.setattr(settings, 'AUTOCLASSIFY_JOBS', True)

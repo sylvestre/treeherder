@@ -47,7 +47,8 @@ def test_classify_test_failure(activate_responses, jm, test_project, test_reposi
 
 def test_autoclassify_update_job_classification(activate_responses, jm, test_repository,
                                                 test_project, eleven_jobs_stored, initial_data,
-                                                failure_lines, classified_failures):
+                                                failure_lines, classified_failures,
+                                                mock_autoclassify_jobs_true):
     job = jm.get_job(2)[0]
 
     for item in classified_failures:

@@ -30,6 +30,14 @@ class Command(BaseCommand):
 
 
 def match_errors(repository, jm, job_guid):
+    job_id = jm.get_job_ids_by_guid([job_guid])[job_guid]["id"]
+    job = jm.get_job(job_id)[0]
+
+    # Only try to autoclassify where we have a failure status; sometimes there can be
+    # error lines even in jobs marked as passing.
+    if job["result"] not in ["testfailed", "busted", "exception"]:
+        return
+
     unmatched_failures = FailureLine.objects.unmatched_for_job(repository, job_guid)
 
     if not unmatched_failures:
@@ -60,7 +68,6 @@ def match_errors(repository, jm, job_guid):
             failure_line.save()
 
     if all_matched:
-        job_id = jm.get_job_ids_by_guid([job_guid])[job_guid]["id"]
         jm.update_after_autoclassification(job_id)
 
 

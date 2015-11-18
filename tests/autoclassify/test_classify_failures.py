@@ -12,9 +12,14 @@ from .utils import (create_bug_suggestions,
                     test_line)
 
 
-def autoclassify(project, job, test_failure_lines):
+def autoclassify(jm, job, test_failure_lines, status="testfailed"):
+    jm.execute(
+        proc="jobs_test.updates.set_job_result",
+        placeholders=[status, job["id"]]
+    )
+
     register_matchers(PreciseTestMatcher)
-    call_command('autoclassify', job['job_guid'], project)
+    call_command('autoclassify', job['job_guid'], jm.project)
 
     for item in test_failure_lines:
         item.refresh_from_db()
@@ -33,10 +38,35 @@ def test_classify_test_failure(activate_responses, jm, test_project, test_reposi
                                                (test_line, {"expected": "ERROR"}),
                                                (test_line, {"message": "message2"})])
 
-    autoclassify(jm.project, job, test_failure_lines)
+    autoclassify(jm, job, test_failure_lines)
 
     expected_classified = test_failure_lines[:2]
     expected_unclassified = test_failure_lines[2:]
+
+    for actual, expected in zip(expected_classified, classified_failures):
+        assert [item.id for item in actual.classified_failures.all()] == [expected.id]
+
+    for item in expected_unclassified:
+        assert item.classified_failures.count() == 0
+
+
+def test_no_autoclassify_job_success(activate_responses, jm, test_project, test_repository,
+                                     eleven_jobs_stored, initial_data, failure_lines,
+                                     classified_failures):
+    job = jm.get_job(2)[0]
+
+    test_failure_lines = create_failure_lines(test_repository,
+                                              job["job_guid"],
+                                              [(test_line, {}),
+                                               (test_line, {"subtest": "subtest2"}),
+                                               (test_line, {"status": "TIMEOUT"}),
+                                               (test_line, {"expected": "ERROR"}),
+                                               (test_line, {"message": "message2"})])
+
+    autoclassify(jm, job, test_failure_lines, status="success")
+
+    expected_classified = []
+    expected_unclassified = test_failure_lines
 
     for actual, expected in zip(expected_classified, classified_failures):
         assert [item.id for item in actual.classified_failures.all()] == [expected.id]
@@ -61,7 +91,7 @@ def test_autoclassify_update_job_classification(activate_responses, jm, test_rep
                                               job["job_guid"],
                                               [(test_line, {})])
 
-    autoclassify(test_project, job, test_failure_lines)
+    autoclassify(jm, job, test_failure_lines)
 
     notes = jm.get_job_note_list(job["id"])
     assert len(notes) == 1
@@ -85,7 +115,7 @@ def test_autoclassify_no_update_job_classification(activate_responses, jm, test_
                                               job["job_guid"],
                                               [(test_line, {})])
 
-    autoclassify(test_project, job, test_failure_lines)
+    autoclassify(jm, job, test_failure_lines)
 
     notes = jm.get_job_note_list(job["id"])
     assert len(notes) == 0

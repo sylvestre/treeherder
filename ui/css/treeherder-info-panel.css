@@ -463,6 +463,11 @@ div.talos-panel {
  * Error Classification
  */
 
+#job-tabs-panel ul.failure-line-list {
+  width: 100%;
+  margin-bottom: 0;
+}
+
 .failure-line {
   padding: 2px 4px 0;
 }
@@ -497,4 +502,8 @@ div.talos-panel {
   overflow-x: auto;
   white-space: pre-wrap;
   font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+
+.classification-options {
+  padding: 0px 0px 0px 18px;
 }

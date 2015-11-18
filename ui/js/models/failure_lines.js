@@ -30,5 +30,10 @@ treeherder.factory('ThFailureLinesModel', [
             });
         };
 
+        ThFailureLinesModel.verify = function(job_id, line_id, best_classification) {
+            return $http.put(thUrl.getRootUrl("/failure-line/" + line_id + "/"),
+                             {best_classification: best_classification});
+        };
+
         return ThFailureLinesModel;
     }]);

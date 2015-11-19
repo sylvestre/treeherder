@@ -649,14 +649,16 @@ class FailureLine(models.Model):
         from treeherder.model.derived import JobsModel
         with JobsModel(self.repository.name) as jm:
             job_id = jm.get_job_ids_by_guid([self.job_guid])[self.job_guid]["id"]
-            print job_id
             bug_suggestions = jm.filter_bug_suggestions(jm.bug_suggestions(job_id))
 
         rv = []
+        ids_seen = set()
         for item in bug_suggestions:
             if all(component in item["search"] for component in components):
-                print "****", item
-                rv.extend(item["bugs"]["open_recent"])
+                for suggestion in item["bugs"]["open_recent"]:
+                    if suggestion["id"] not in ids_seen:
+                        ids_seen.add(suggestion["id"])
+                        rv.append(suggestion)
 
         return rv
 

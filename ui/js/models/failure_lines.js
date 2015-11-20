@@ -1,8 +1,8 @@
 'use strict';
 
 treeherder.factory('ThFailureLinesModel', [
-    '$http', 'ThLog', 'thUrl',
-    function($http, ThLog, thUrl) {
+    '$http', 'ThLog', 'thUrl', 'ThClassifiedFailuresModel', 'thNotify', '$q',
+    function($http, ThLog, thUrl, ThClassifiedFailuresModel, thNotify, $q) {
 
         var ThFailureLinesModel = function(data) {
             angular.extend(this, data);
@@ -30,9 +30,22 @@ treeherder.factory('ThFailureLinesModel', [
             });
         };
 
-        ThFailureLinesModel.verify = function(job_id, line_id, best_classification) {
-            return $http.put(thUrl.getRootUrl("/failure-line/" + line_id + "/"),
-                             {best_classification: best_classification});
+        ThFailureLinesModel.verify = function(line_id, bug_number) {
+            return ThClassifiedFailuresModel.get_or_create_for_bug(bug_number)
+                .then(function(response) {
+                    console.log(response.data);
+                    if (response.data.length > 1) {
+                        thNotify.send("got too many classified_failures", "danger", true);
+                        return $q.reject("got too many classified_failures");
+                    } else {
+                        return $http.put(thUrl.getRootUrl("/failure-line/" + line_id + "/"),
+                                         {best_classification: response.data[0].id});
+                    }
+
+                }, function(error) {
+                    thNotify.send("Can't verify without a classification for bug " + bug_number, "danger", true);
+                    return $q.reject();
+                });
         };
 
         return ThFailureLinesModel;

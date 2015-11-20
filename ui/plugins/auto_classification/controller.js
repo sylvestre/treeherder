@@ -40,7 +40,9 @@ treeherder.controller('ClassificationPluginCtrl', [
                         _.forEach(failureLines, function(line) {
                             // map bug numbers to classified failure ids or 0
                             // used for the selection radio buttons
-                            var options = line.classified_failures.slice();
+                            var options = _.filter(line.classified_failures, function(cf) {
+                                return cf.bug_number !== null;
+                            });
 
                             // set the best classified_failure to a value or -1 if not set
                             if (line.best_classification) {
@@ -48,19 +50,24 @@ treeherder.controller('ClassificationPluginCtrl', [
                                     line.classified_failures,
                                     {id: line.best_classification});
 
-                                $scope.lineBest[line.id] = best.id || -1;
-                                // move the best one to the top
-                                options = _.without(options, best);
-                                options = [best].concat(options);
+                                // don't add to options if no bug number
+                                if (best.bug_number) {
+                                    // move the best one to the top
+                                    options = _.without(options, best);
+                                    options = [best].concat(options);
+                                }
                             }
 
                             _.forEach(line.unstructured_bugs, function(bug) {
-                                options.push({id: -1, bug_number: bug.id});
+                                options.push({id: bug.id, bug_number: bug.id, bug_summary: bug.summary});
                             });
 
-                            options.push({id: -1, bug_number: null});
+                            // add a "manual bug" option
+                            options.push({id: "manual"});
 
+                            // choose first in list as lineBest
                             $scope.lineClassificationOptions[line.id] = options;
+                            $scope.lineBest[line.id] = options[0].id;
                         });
                     }
                 })
@@ -69,28 +76,28 @@ treeherder.controller('ClassificationPluginCtrl', [
                 });
         };
 
-        $scope.selected = function() {
-            //console.log("lineBest", $scope.lineBest);
+        var getChosenBug = function(line_id) {
+            if ($scope.lineBest[line_id] === 'manual') {
+                return $scope.manualBugs[line_id];
+            } else {
+                return $scope.lineBest[line_id];
+            }
+
         };
 
         $scope.verifyBest = function(lineIndex) {
             var failureLine = $scope.failureLines[lineIndex];
-            ThFailureLinesModel.verify($scope.jobId, failureLine.id, failureLine.best_classification)
+
+            ThFailureLinesModel.verify(failureLine.id, getChosenBug(failureLine.id))
                 .then(function(response) {
-                        thNotify.send("Autoclassification has been verified");
+                        thNotify.send("Autoclassification has been verified", "success");
                     }, function(errorResp) {
-                        thNotify.send("Error verifying autoclassification");
-                    }
+                        thNotify.send("Error verifying autoclassification", "danger");
+                    })
                 .finally(function() {
                     thTabs.tabs.autoClassification.update();
-                })
+                }
             );
-        };
-
-        $scope.getBugSummary = function(bugNumber) {
-            //console.log(bugNumber, $scope.failureLines.unstructured_bugs);
-            //console.log(_.find($scope.failureLines.unstructured_bugs, {id: bugNumber}));
-            return _.result(_.find($scope.failureLines.unstructured_bugs, "id", bugNumber), "summary");
         };
     }
 ]);

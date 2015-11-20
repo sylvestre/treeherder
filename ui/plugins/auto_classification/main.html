@@ -47,27 +47,22 @@
               <input type="radio"
                      value="{{classification.id}}"
                      name="{{::line.id}}"
-                     ng-click="selected()"
                      ng-model="lineBest[line.id]" />
                 <a href="{{::getBugUrl(classification.bug_number) }}"
                    ng-if="classification.bug_number"
                    target="_blank">{{::classification.bug_number}}
-                  <span ng-bind-html="getBugSummary(classification.bug_number) | escapeHTML"></span>
+                  <span ng-bind-html="classification.bug_summary | escapeHTML"></span>
                 </a>
-                <span ng-if="!classification.bug_number"> No bug</span>
-            </label>
-          </li>
 
-          <!--enter your own bug-->
-          <li>
-            <label>
-              <input type="radio"
-                     value="manual"
-                     name="{{::line.id}}"
-                     ng-click="selected()"
-                     ng-model="lineBest[line.id]" />
-                     <input ng-if="lineBest[line.id] === 'manual'" type="text" ng-model="manualBugs[line.id]"/>
-                     <span ng-if="lineBest[line.id] !== 'manual'" class="lightgray"><em>Enter another bug number</em></span>
+                <!--enter bug manually-->
+                <span ng-if="classification.id === 'manual'">
+                  <input ng-if="lineBest[line.id] === 'manual'"
+                         class="manual-bug-input"
+                         type="text"
+                         ng-model="manualBugs[line.id]"/>
+                  <span ng-if="lineBest[line.id] !== 'manual'"
+                        class="manual-bug-label lightgray"><em>Enter a bug number</em></span>
+                </span>
             </label>
           </li>
         </ul>

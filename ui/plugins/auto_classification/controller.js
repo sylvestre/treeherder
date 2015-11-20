@@ -90,10 +90,10 @@ treeherder.controller('ClassificationPluginCtrl', [
 
             ThFailureLinesModel.verify(failureLine.id, getChosenBug(failureLine.id))
                 .then(function(response) {
-                        thNotify.send("Autoclassification has been verified", "success");
-                    }, function(errorResp) {
-                        thNotify.send("Error verifying autoclassification", "danger");
-                    })
+                    thNotify.send("Autoclassification has been verified", "success");
+                }, function(errorResp) {
+                    thNotify.send("Error verifying autoclassification", "danger");
+                })
                 .finally(function() {
                     thTabs.tabs.autoClassification.update();
                 }

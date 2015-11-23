@@ -47,11 +47,17 @@
                    value="{{classification.id}}"
                    name="{{::line.id}}"
                    ng-model="lineBest[line.id]" />
+            <span ng-if="classification.best" class="glyphicon glyphicon-star-empty"></span>
             <a href="{{::getBugUrl(classification.bug_number) }}"
                ng-if="classification.bug_number"
                target="_blank">{{::classification.bug_number}}
               <span ng-bind-html="classification.bug_summary | escapeHTML"></span>
             </a>
+            <span ng-if="classification.best && !classification.bug_number">
+              <input class="manual-bug-input"
+                     type="text"
+                     ng-model="manualBugs[line.id]"/>
+            </span>
 
             <!--enter bug manually-->
             <span ng-if="classification.id === 'manual'">

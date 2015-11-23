@@ -50,12 +50,10 @@ treeherder.controller('ClassificationPluginCtrl', [
                                     line.classified_failures,
                                     {id: line.best_classification});
 
-                                // don't add to options if no bug number
-                                if (best.bug_number) {
-                                    // move the best one to the top
-                                    options = _.without(options, best);
-                                    options = [best].concat(options);
-                                }
+                                best.best = true;
+                                // move the best one to the top
+                                options = _.without(options, best);
+                                options = [best].concat(options);
                             }
 
                             _.forEach(line.unstructured_bugs, function(bug) {

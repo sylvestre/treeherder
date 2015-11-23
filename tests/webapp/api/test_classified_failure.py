@@ -36,6 +36,19 @@ def test_get_classified_failures(webapp, classified_failures):
     assert actual == expected
 
 
+def test_get_classified_failures_bug(webapp, classified_failures):
+    classified_failures[0].bug_number = 1234
+    classified_failures[0].save()
+
+    resp = webapp.get(reverse("classified-failure-list") + "?bug_number=1234")
+    assert resp.status_int == 200
+
+    actual = resp.json
+    expected = [{"id": classified_failures[0].id,
+                 "bug_number": classified_failures[0].bug_number}]
+    assert actual == expected
+
+
 def test_post_new_classified_failure(webapp, classified_failures):
     client = APIClient()
     user = User.objects.create(username="MyName")

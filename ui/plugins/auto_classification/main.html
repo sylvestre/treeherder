@@ -39,34 +39,32 @@
         CRASH | {{line.signature}}
       </span>
 
-      <span ng-if="line.classified_failures.length">
-        <ul class="list-unstyled classification-options">
-          <!--classifications for line-->
-          <li ng-repeat="classification in lineClassificationOptions[line.id]" >
-            <label>
-              <input type="radio"
-                     value="{{classification.id}}"
-                     name="{{::line.id}}"
-                     ng-model="lineBest[line.id]" />
-                <a href="{{::getBugUrl(classification.bug_number) }}"
-                   ng-if="classification.bug_number"
-                   target="_blank">{{::classification.bug_number}}
-                  <span ng-bind-html="classification.bug_summary | escapeHTML"></span>
-                </a>
+      <ul class="list-unstyled classification-options">
+        <!--classifications for line-->
+        <li ng-repeat="classification in lineClassificationOptions[line.id]" >
+          <label>
+            <input type="radio"
+                   value="{{classification.id}}"
+                   name="{{::line.id}}"
+                   ng-model="lineBest[line.id]" />
+            <a href="{{::getBugUrl(classification.bug_number) }}"
+               ng-if="classification.bug_number"
+               target="_blank">{{::classification.bug_number}}
+              <span ng-bind-html="classification.bug_summary | escapeHTML"></span>
+            </a>
 
-                <!--enter bug manually-->
-                <span ng-if="classification.id === 'manual'">
-                  <input ng-if="lineBest[line.id] === 'manual'"
-                         class="manual-bug-input"
-                         type="text"
-                         ng-model="manualBugs[line.id]"/>
-                  <span ng-if="lineBest[line.id] !== 'manual'"
-                        class="manual-bug-label lightgray"><em>Enter a bug number</em></span>
-                </span>
-            </label>
-          </li>
-        </ul>
-      </span>
+            <!--enter bug manually-->
+            <span ng-if="classification.id === 'manual'">
+              <input ng-if="lineBest[line.id] === 'manual'"
+                     class="manual-bug-input"
+                     type="text"
+                     ng-model="manualBugs[line.id]"/>
+              <span ng-if="lineBest[line.id] !== 'manual'"
+                    class="manual-bug-label lightgray"><em>Enter a bug number</em></span>
+            </span>
+          </label>
+        </li>
+      </ul>
     </li>
 
     <li ng-if="!tabs.autoClassification.is_loading &&  !failureLines.length">

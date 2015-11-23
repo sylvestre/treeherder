@@ -59,7 +59,9 @@ treeherder.controller('ClassificationPluginCtrl', [
                             }
 
                             _.forEach(line.unstructured_bugs, function(bug) {
-                                options.push({id: bug.id, bug_number: bug.id, bug_summary: bug.summary});
+                                options.push({id: "unstructured-" + bug.id,
+                                              bug_number: bug.id,
+                                              bug_summary: bug.summary});
                             });
 
                             // add a "manual bug" option

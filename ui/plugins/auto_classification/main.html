@@ -15,7 +15,7 @@
       <span><strong>{{line | classified}}</strong></span>
       <span ng-if="line.action === 'test_result'">
         <span>{{line.test}} {{line.subtest}}
-          Expected: {{line.expected}}, got: <strong>{{line.status}}</strong>
+          Expected: <strong>{{line.expected}}</strong>, got: <strong>{{line.status}}</strong>
         </span>
         <div ng-if="line.message"
              ng-init="messageExpanded=false"

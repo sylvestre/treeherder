@@ -1,8 +1,8 @@
 'use strict';
 
 treeherder.factory('ThFailureLinesModel', [
-    '$http', 'ThLog', 'thUrl', 'ThClassifiedFailuresModel', 'thNotify', '$q',
-    function($http, ThLog, thUrl, ThClassifiedFailuresModel, thNotify, $q) {
+    '$rootScope', '$http', 'ThLog', 'thUrl', 'ThClassifiedFailuresModel', 'thNotify', '$q',
+    function($rootScope, $http, ThLog, thUrl, ThClassifiedFailuresModel, thNotify, $q) {
 
         var ThFailureLinesModel = function(data) {
             angular.extend(this, data);
@@ -39,7 +39,8 @@ treeherder.factory('ThFailureLinesModel', [
                         return $q.reject("got too many classified_failures");
                     } else {
                         return $http.put(thUrl.getRootUrl("/failure-line/" + line_id + "/"),
-                                         {best_classification: response.data[0].id});
+                                         {project: $rootScope.repoName,
+                                          best_classification: response.data[0].id});
                     }
 
                 }, function(error) {

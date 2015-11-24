@@ -394,7 +394,7 @@ class JobsModel(TreeherderModelBase):
             debug_show=self.DEBUG
         )
 
-    def insert_job_note(self, job_id, failure_classification_id, who, note):
+    def insert_job_note(self, job_id, failure_classification_id, who, note, autoclassify=False):
         """insert a new note for a job and updates its failure classification"""
         self.execute(
             proc='jobs.inserts.insert_note',
@@ -412,7 +412,7 @@ class JobsModel(TreeherderModelBase):
         intermittent_ids = FailureClassification.objects.filter(
             name__in=["intermittent", "intermittent needs filing"]).values_list('id', flat=True)
 
-        if who != "autoclassifier" and failure_classification_id in intermittent_ids:
+        if not autoclassify and failure_classification_id in intermittent_ids:
             self.update_autoclassification(job_id)
 
     def delete_job_note(self, note_id, job_id):
@@ -481,12 +481,12 @@ class JobsModel(TreeherderModelBase):
 
         return rv
 
-    def update_after_autoclassification(self, job_id):
+    def update_after_autoclassification(self, job_id, user=None):
         if not settings.AUTOCLASSIFY_JOBS:
             return
 
         if self.fully_autoclassified(job_id) and len(self.get_job_note_list(job_id)) == 0:
-            self.insert_autoclassify_job_note(job_id)
+            self.insert_autoclassify_job_note(job_id, user=user)
 
     def fully_autoclassified(self, job_id):
         job = self.get_job(job_id)[0]
@@ -498,15 +498,24 @@ class JobsModel(TreeherderModelBase):
         num_failure_lines = FailureLine.objects.filter(job_guid=job["job_guid"],
                                                        best_classification__isnull=False).count()
         if num_failure_lines == 0:
+            print "Not fully classified: no failure lines"
             return False
 
         bug_suggestion_lines = self.filter_bug_suggestions(self.bug_suggestions(job_id))
+        print "Got %i unstructured lines and %i structured lines" % (len(bug_suggestion_lines),
+                                                                     num_failure_lines)
 
         return num_failure_lines == len(bug_suggestion_lines)
 
-    def insert_autoclassify_job_note(self, job_id):
+    def insert_autoclassify_job_note(self, job_id, user=None):
         if not settings.AUTOCLASSIFY_JOBS:
             return
+
+        if user is None:
+            verified = False
+            user = "autoclassifier"
+        else:
+            verified = True
 
         job = self.get_job(job_id)[0]
 
@@ -525,10 +534,14 @@ class JobsModel(TreeherderModelBase):
             self.insert_bug_job_map(job_id, bug_number, "autoclassification",
                                     int(time.time()), "autoclassifier")
 
-        classification = FailureClassification.objects.get(name="autoclassified intermittent")
+        if not verified:
+            classification = FailureClassification.objects.get(
+                name="autoclassified intermittent")
+            logger.info("Autoclassifier adding job note")
+        else:
+            classification = FailureClassification.objects.get(name="intermittent")
 
-        logger.info("Autoclassifier adding job note")
-        self.insert_job_note(job_id, classification.id, "autoclassifier", "")
+        self.insert_job_note(job_id, classification.id, user, "", autoclassify=True)
 
     def bug_suggestions(self, job_id):
         """Get the list of log lines and associated bug suggestions for a job"""

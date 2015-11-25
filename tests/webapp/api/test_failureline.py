@@ -1,13 +1,15 @@
 import json
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from rest_framework.test import APIClient
 
+from tests.autoclassify.utils import (create_failure_lines,
+                                      test_line)
 from treeherder.autoclassify.detectors import ManualDetector
 from treeherder.model.derived import ArtifactsModel
-from treeherder.model.models import (Matcher,
+from treeherder.model.models import (FailureLine,
+                                     Matcher,
                                      MatcherManager)
 
 
@@ -92,8 +94,10 @@ def test_update_failure_line_replace(eleven_jobs_stored, jm, failure_lines,
     assert failure_line.matches.get(classified_failure_id=classified_failures[1].id).matcher == expected_matcher
 
 
-def test_update_failure_line_mark_job(eleven_jobs_stored, mock_autoclassify_jobs_true,
-                                      jm, failure_lines, classified_failures, api_user):
+def test_update_failure_line_mark_job(eleven_jobs_stored,
+                                      mock_autoclassify_jobs_true, jm,
+                                      failure_lines,
+                                      classified_failures, api_user):
 
     MatcherManager.register_detector(ManualDetector)
 
@@ -104,34 +108,28 @@ def test_update_failure_line_mark_job(eleven_jobs_stored, mock_autoclassify_jobs
 
     job = jm.get_job(1)[0]
 
-    job_failure_lines = [line for line in failure_lines
-                         if line.job_guid == job["job_guid"]]
+    job_failure_lines = [line for line in failure_lines if
+                         line.job_guid == job["job_guid"]]
 
-    bs_artifact = {
-        'type': 'json',
-        'name': 'Bug suggestions',
-        'blob': json.dumps([{"search": "TEST-UNEXPECTED-%s %s" % (line.status.upper(),
-                                                                  line.message)}
-                            for line in job_failure_lines]),
-        'job_guid': job['job_guid']
-    }
+    bs_artifact = {'type': 'json',
+                   'name': 'Bug suggestions',
+                   'blob': json.dumps([{"search": "TEST-UNEXPECTED-%s %s" %
+                                        (line.status.upper(), line.message)}
+                                       for line in job_failure_lines]),
+                   'job_guid': job['job_guid']}
 
     with ArtifactsModel(jm.project) as artifacts_model:
-        artifacts_model.load_job_artifacts(
-            [bs_artifact],
-            {bs_artifact['job_guid']: job}
-        )
+        artifacts_model.load_job_artifacts([bs_artifact],
+                                           {bs_artifact['job_guid']: job})
 
     for failure_line in job_failure_lines:
 
         assert failure_line.best_is_verified is False
 
-        body = {"project": jm.project,
-                "best_classification": classified_failures[1].id}
+        body = {"best_classification": classified_failures[1].id}
 
-        resp = client.put(
-            reverse("failure-line-detail", kwargs={"pk": failure_line.id}),
-            body, format="json")
+        resp = client.put(reverse("failure-line-detail", kwargs={"pk": failure_line.id}),
+                          body, format="json")
 
         assert resp.status_code == 200
 
@@ -139,9 +137,6 @@ def test_update_failure_line_mark_job(eleven_jobs_stored, mock_autoclassify_jobs
 
         assert failure_line.best_classification == classified_failures[1]
         assert failure_line.best_is_verified
-
-    print settings.AUTOCLASSIFY_JOBS
-    job = jm.get_job(job['id'])[0]
 
     assert jm.fully_autoclassified(job['id'])
 
@@ -151,3 +146,64 @@ def test_update_failure_line_mark_job(eleven_jobs_stored, mock_autoclassify_jobs
 
     assert notes[0]["failure_classification_id"] == 4
     assert notes[0]["who"] == "test@example.org"
+
+
+def test_update_failure_lines(eleven_jobs_stored,
+                              mock_autoclassify_jobs_true, jm,
+                              test_repository, failure_lines,
+                              classified_failures, api_user):
+
+    jobs = (jm.get_job(1)[0], jm.get_job(2)[0])
+    MatcherManager.register_detector(ManualDetector)
+
+    client = APIClient()
+    user = User.objects.create(username="MyName",
+                               email="test@example.org")
+    client.force_authenticate(user=user)
+
+    create_failure_lines(test_repository,
+                         jobs[1]["job_guid"],
+                         [(test_line, {}),
+                          (test_line, {"subtest": "subtest2"})])
+
+    failure_lines = FailureLine.objects.filter(
+        job_guid__in=[job["job_guid"] for job in jobs]).all()
+
+    for job in jobs:
+        job_failure_lines = FailureLine.objects.filter(job_guid=job["job_guid"]).all()
+        bs_artifact = {'type': 'json',
+                       'name': 'Bug suggestions',
+                       'blob': json.dumps([{"search": "TEST-UNEXPECTED-%s %s" %
+                                            (line.status.upper(), line.message)} for line in
+                                           job_failure_lines]),
+                       'job_guid': job['job_guid']}
+
+        with ArtifactsModel(jm.project) as artifacts_model:
+            artifacts_model.load_job_artifacts([bs_artifact],
+                                               {bs_artifact['job_guid']: job})
+
+    body = [{"id": failure_line.id,
+             "best_classification": classified_failures[1].id}
+            for failure_line in failure_lines]
+
+    for failure_line in failure_lines:
+        assert failure_line.best_is_verified is False
+
+    resp = client.put(reverse("failure-line-update-many"), body, format="json")
+
+    assert resp.status_code == 200
+
+    for failure_line in failure_lines:
+        failure_line.refresh_from_db()
+        assert failure_line.best_classification == classified_failures[1]
+        assert failure_line.best_is_verified
+
+    for job in jobs:
+        assert jm.fully_autoclassified(job['id'])
+
+        notes = jm.get_job_note_list(job['id'])
+
+        assert len(notes) == 1
+
+        assert notes[0]["failure_classification_id"] == 4
+        assert notes[0]["who"] == "test@example.org"

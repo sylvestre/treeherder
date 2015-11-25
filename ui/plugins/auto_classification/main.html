@@ -7,8 +7,8 @@
         ng-class="{'classified-line': line.best_classification }">
       <button ng-if="!line.best_is_verified"
               class="btn btn-xs btn-default"
-              title="Requires verification - select best match and click here"
-              ng-click="verifyBest(line)">Verify</button>
+              title="Select best match and click here"
+              ng-click="save(line)">{{getSaveButtonText(line)}}</button>
       <span ng-if="line.best_is_verified"
             class="label label-xs label-primary"
             title="This classification is already verified">Verified</span>
@@ -40,10 +40,10 @@
       </span>
 
       <span ng-if="line.best_is_verified">
-            <span class="glyphicon glyphicon-star-empty"></span>
-            <span class="line-option-text" ng-if="line.best.bug_number">
-              <a href="{{::getBugUrl(line.best.bug_number) }}"
-                 target="_blank">Bug {{::line.best.bug_number}} - <span ng-bind-html="line.best.bug_summary | escapeHTML"></span>
+            <span class="glyphicon glyphicon-star-empty best-classification-star"></span>
+            <span class="line-option-text" ng-if="line.ui.best.bug_number">
+              <a href="{{::getBugUrl(line.ui.best.bug_number) }}"
+                 target="_blank">Bug {{::line.ui.best.bug_number}} - <span ng-bind-html="line.ui.best.bug_summary | escapeHTML"></span>
               </a>
             </span>
 
@@ -51,13 +51,15 @@
       <ul class="list-unstyled"
           ng-if="!line.best_is_verified">
         <!--classification options for line-->
-        <li ng-repeat="option in lineClassificationOptions[line.id]" >
-          <span ng-class="{'classification-options-best': option.best, 'classification-options': !option.best}">
-            <span ng-if="option.best" class="glyphicon glyphicon-star-empty"></span>
+        <li ng-repeat="option in line.ui.options" >
+          <span ng-class="{'classification-options-best': option.is_best, 'classification-options': !option.is_best}">
+            <span ng-if="option.is_best"
+                  class="glyphicon glyphicon-star-empty best-classification-star"
+                  title="This is the option Treeherder chose as the best"></span>
             <input type="radio"
-                   value="{{option.id}}"
+                   value="{{$index}}"
                    name="{{::line.id}}"
-                   ng-model="lineSelection[line.id]" />
+                   ng-model="line.ui.selectedOption" />
             <span class="line-option-text" ng-if="option.bug_number">
               <a href="{{::getBugUrl(option.bug_number) }}"
                  target="_blank">Bug {{::option.bug_number}} - <span ng-bind-html="option.bug_summary | escapeHTML"></span>

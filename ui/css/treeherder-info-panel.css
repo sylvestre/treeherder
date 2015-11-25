@@ -505,16 +505,22 @@ div.talos-panel {
 }
 
 .classification-options {
-  padding: 0 0 0 18px;
+  padding-left: 18px;
   display: inline-flex;
 }
 
 .classification-options-best {
-  padding: 0 0 0 3px;
+  padding-left: 6px;
+  display: inline-flex;
+}
+
+.best-classification-star {
+  align-self: center;
 }
 
 .manual-bug-input {
   line-height: 8px;
+  margin: 2px 0 0 4px;
 }
 .manual-bug-label {
   line-height: 15pt;

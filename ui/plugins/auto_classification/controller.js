@@ -15,9 +15,6 @@ treeherder.controller('ClassificationPluginCtrl', [
         $scope.lineSelection = {};
         $scope.manualBugs = {};
 
-        $scope.lineClassificationOptions = {};
-        $scope.lineClassificationItems = {};
-
         thTabs.tabs.autoClassification.update = function() {
             $scope.jobId = thTabs.tabs.autoClassification.contentId;
             // if there's an ongoing timeout, cancel it
@@ -49,11 +46,10 @@ treeherder.controller('ClassificationPluginCtrl', [
 
         var buildFailureLineOptions = function(failureLines) {
             _.forEach(failureLines, function(line) {
+                line.ui = {};
 
                 // used for the selection radio buttons
-                var lineOptions = [];
-                // used to find the exact object once a selection has been submitted for verification
-                var lineItems = {};
+                line.ui.options = [];
                 // the classified_failure specified as "best" (if any)
                 var best;
 
@@ -66,8 +62,7 @@ treeherder.controller('ClassificationPluginCtrl', [
                 _.forEach(line.classified_failures, function(cf) {
                     if (cf.bug_number !== null) {
                         cf.type = "classified_failure";
-                        lineOptions.push(cf);
-                        lineItems[cf.id] = cf;
+                        line.ui.options.push(cf);
                     }
                 });
 
@@ -77,13 +72,13 @@ treeherder.controller('ClassificationPluginCtrl', [
                         line.classified_failures,
                         {id: line.best_classification});
 
-                    best.best = true;
+                    best.is_best = true;
                     best.type = "classified_failure";
+
                     // move the best one to the top
-                    lineOptions = _.without(lineOptions, best);
-                    lineOptions = [best].concat(lineOptions);
-                    lineItems[best.id] = best;
-                    line.best = best;
+                    line.ui.options = _.without(line.ui.options, best);
+                    line.ui.options = [best].concat(line.ui.options);
+                    line.ui.best = best;
                 }
 
                 // add in unstructured_bugs as options as well
@@ -93,40 +88,37 @@ treeherder.controller('ClassificationPluginCtrl', [
                     // conflict with a classified_failure id.
                     var ubid = "ub-" + bug.id;
                     bug.type = "unstructured_bug";
-                    lineOptions.push({id: ubid,
+                    line.ui.options.push({id: ubid,
                                   bug_number: bug.id,
                                   bug_summary: bug.summary});
 
-                    lineItems[ubid] = bug;
                 });
 
                 if (!best || (best && best.bug_number)) {
                     // add a "manual bug" option
-                    lineOptions.push({
+                    line.ui.options.push({
                         id: "manual",
-                        bug_number: null
-                    });
-                    lineItems.manual = {
                         type: "unstructured_bug",
                         bug_number: null
-                    };
+                    });
                 }
 
                 // choose first in list as lineSelection
-                $scope.lineClassificationOptions[line.id] = lineOptions;
-                $scope.lineClassificationItems[line.id] = lineItems;
-                $scope.lineSelection[line.id] = lineOptions[0].id;
+                line.ui.selectedOption = 0;
             });
 
         };
 
-        var getSelectedItem = function(line_id) {
-            var selectedId = $scope.lineSelection[line_id];
-            return $scope.lineClassificationItems[line_id][selectedId];
+        $scope.getSaveButtonText = function(line) {
+            if (line.best_classification === line.ui.options[line.ui.selectedOption].id) {
+                return "Verify";
+            } else {
+                return "Save";
+            }
         };
 
-        $scope.verifyBest = function(line) {
-            var selected = getSelectedItem(line.id);
+        $scope.save = function(line) {
+            var selected = line.ui.options[line.ui.selectedOption];
             var bug_number = selected.bug_number ? selected.bug_number : $scope.manualBugs[line.id];
 
             if (_.parseInt(bug_number)) {

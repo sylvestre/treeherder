@@ -1,19 +1,22 @@
 "use strict";
 
 treeherder.controller('ClassificationPluginCtrl', [
-    '$scope', 'ThLog', 'ThFailureLinesModel','$q', 'thTabs', '$timeout', 'thNotify',
+    '$scope', 'ThLog', 'ThFailureLinesModel', 'ThClassifiedFailuresModel',
+    '$q', 'thTabs', '$timeout', 'thNotify',
     function ClassificationPluginCtrl(
-        $scope, ThLog, ThFailureLinesModel, $q, thTabs, $timeout, thNotify) {
+        $scope, ThLog, ThFailureLinesModel, ThClassifiedFailuresModel,
+        $q, thTabs, $timeout, thNotify) {
         var $log = new ThLog(this.constructor.name);
 
         $log.debug("error classification plugin initialized");
 
         var timeoutPromise = null;
         var requestPromise = null;
-        $scope.lineBest = {};
+        $scope.lineSelection = {};
         $scope.manualBugs = {};
 
         $scope.lineClassificationOptions = {};
+        $scope.lineClassificationItems = {};
 
         thTabs.tabs.autoClassification.update = function() {
             $scope.jobId = thTabs.tabs.autoClassification.contentId;
@@ -36,39 +39,7 @@ treeherder.controller('ClassificationPluginCtrl', [
                     if (!$scope.failureLinesLoaded) {
                         timeoutPromise = $timeout(thTabs.tabs.autoClassification.update, 5000);
                     } else {
-
-                        _.forEach(failureLines, function(line) {
-                            // map bug numbers to classified failure ids or 0
-                            // used for the selection radio buttons
-                            var options = _.filter(line.classified_failures, function(cf) {
-                                return cf.bug_number !== null;
-                            });
-
-                            // set the best classified_failure to a value or -1 if not set
-                            if (line.best_classification) {
-                                var best = _.find(
-                                    line.classified_failures,
-                                    {id: line.best_classification});
-
-                                best.best = true;
-                                // move the best one to the top
-                                options = _.without(options, best);
-                                options = [best].concat(options);
-                            }
-
-                            _.forEach(line.unstructured_bugs, function(bug) {
-                                options.push({id: "unstructured-" + bug.id,
-                                              bug_number: bug.id,
-                                              bug_summary: bug.summary});
-                            });
-
-                            // add a "manual bug" option
-                            options.push({id: "manual"});
-
-                            // choose first in list as lineBest
-                            $scope.lineClassificationOptions[line.id] = options;
-                            $scope.lineBest[line.id] = options[0].id;
-                        });
+                        buildFailureLineOptions(failureLines);
                     }
                 })
                 .finally(function() {
@@ -76,28 +47,143 @@ treeherder.controller('ClassificationPluginCtrl', [
                 });
         };
 
-        var getChosenBug = function(line_id) {
-            if ($scope.lineBest[line_id] === 'manual') {
-                return $scope.manualBugs[line_id];
+        var buildFailureLineOptions = function(failureLines) {
+            _.forEach(failureLines, function(line) {
+
+                // used for the selection radio buttons
+                var lineOptions = [];
+                // used to find the exact object once a selection has been submitted for verification
+                var lineItems = {};
+                // the classified_failure specified as "best" (if any)
+                var best;
+
+                // collect all the classified_failures.  But skip
+                // ones with a null bug.  classified_failures with
+                // null bugs have no distinguishing features to make
+                // them relevant.
+                // If the "best" one has a null bug we will add
+                // that in later.
+                _.forEach(line.classified_failures, function(cf) {
+                    if (cf.bug_number !== null) {
+                        cf.type = "classified_failure";
+                        lineOptions.push(cf);
+                        lineItems[cf.id] = cf;
+                    }
+                });
+
+                // set the best classified_failure
+                if (line.best_classification) {
+                    best = _.find(
+                        line.classified_failures,
+                        {id: line.best_classification});
+
+                    best.best = true;
+                    best.type = "classified_failure";
+                    // move the best one to the top
+                    lineOptions = _.without(lineOptions, best);
+                    lineOptions = [best].concat(lineOptions);
+                    lineItems[best.id] = best;
+                    line.best = best;
+                }
+
+                // add in unstructured_bugs as options as well
+                _.forEach(line.unstructured_bugs, function(bug) {
+                    // adding a prefix to the bug id because,
+                    // theoretically, however unlikely, it could
+                    // conflict with a classified_failure id.
+                    var ubid = "ub-" + bug.id;
+                    bug.type = "unstructured_bug";
+                    lineOptions.push({id: ubid,
+                                  bug_number: bug.id,
+                                  bug_summary: bug.summary});
+
+                    lineItems[ubid] = bug;
+                });
+
+                if (!best || (best && best.bug_number)) {
+                    // add a "manual bug" option
+                    lineOptions.push({
+                        id: "manual",
+                        bug_number: null
+                    });
+                    lineItems.manual = {
+                        type: "unstructured_bug",
+                        bug_number: null
+                    };
+                }
+
+                // choose first in list as lineSelection
+                $scope.lineClassificationOptions[line.id] = lineOptions;
+                $scope.lineClassificationItems[line.id] = lineItems;
+                $scope.lineSelection[line.id] = lineOptions[0].id;
+            });
+
+        };
+
+        var getSelectedItem = function(line_id) {
+            var selectedId = $scope.lineSelection[line_id];
+            return $scope.lineClassificationItems[line_id][selectedId];
+        };
+
+        $scope.verifyBest = function(line) {
+            var selected = getSelectedItem(line.id);
+            var bug_number = selected.bug_number ? selected.bug_number : $scope.manualBugs[line.id];
+
+            if (_.parseInt(bug_number)) {
+
+                switch (selected.type) {
+                    case "classified_failure":
+                        verifyClassifiedFailure(line, selected, bug_number);
+                        break;
+                    case "unstructured_bug":
+                        verifyUnstructuredBug(line, bug_number);
+                        break;
+                }
             } else {
-                return $scope.lineBest[line_id];
+                thNotify.send("Invalid bug number: " + bug_number, "danger", true);
             }
 
         };
 
-        $scope.verifyBest = function(lineIndex) {
-            var failureLine = $scope.failureLines[lineIndex];
-
-            ThFailureLinesModel.verify(failureLine.id, getChosenBug(failureLine.id))
-                .then(function(response) {
+        var verifyLine = function(line, cf) {
+            ThFailureLinesModel.verify(line.id, cf.id)
+                .then(function (response) {
                     thNotify.send("Autoclassification has been verified", "success");
-                }, function(errorResp) {
+                }, function (errorResp) {
                     thNotify.send("Error verifying autoclassification", "danger");
                 })
-                .finally(function() {
+                .finally(function () {
                     thTabs.tabs.autoClassification.update();
-                }
-            );
+                });
+
         };
+
+        var verifyClassifiedFailure = function(line, cf, bug_number) {
+            if (cf.bug_number !== bug_number) {
+                // need to update the bug number on it
+                var model = new ThClassifiedFailuresModel(cf);
+                model.update(bug_number).then(function(updated_cf) {
+                    // got the updated cf, now need to verify the line
+                    verifyLine(line, updated_cf);
+                },
+                                              function(error) {
+                                                  thNotify.send(error, "danger", true);
+                                              });
+            } else {
+                verifyLine(line, cf);
+            }
+        };
+
+        var verifyUnstructuredBug = function(line, bug_number) {
+            ThClassifiedFailuresModel.create(bug_number)
+                .then(function(resp) {
+                    // got the updated cf, now need to verify the line
+                    verifyLine(line, resp.data);
+                },
+                      function(error) {
+                          thNotify.send(error, "danger", true);
+                      });
+        };
+
     }
 ]);

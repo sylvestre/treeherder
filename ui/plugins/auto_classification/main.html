@@ -8,10 +8,10 @@
       <button ng-if="!line.best_is_verified"
               class="btn btn-xs btn-default"
               title="Requires verification - select best match and click here"
-              ng-click="verifyBest($index)">Verify</button>
+              ng-click="verifyBest(line)">Verify</button>
       <span ng-if="line.best_is_verified"
-              class="label label-xs label-primary"
-              title="This classification is already verified">Verified</span>
+            class="label label-xs label-primary"
+            title="This classification is already verified">Verified</span>
       <span><strong>{{line | classified}}</strong></span>
       <span ng-if="line.action === 'test_result'">
         <span>{{line.test}} {{line.subtest}}
@@ -21,8 +21,8 @@
              ng-init="messageExpanded=false"
              class="failure-line-message">
              <span class="failure-line-message-toggle fa fa-fw fa-lg"
-                     ng-class="{'fa-caret-down': messageExpanded, 'fa-caret-right': !messageExpanded}"
-                     ng-click="messageExpanded = !messageExpanded"></span>
+                   ng-class="{'fa-caret-down': messageExpanded, 'fa-caret-right': !messageExpanded}"
+                   ng-click="messageExpanded = !messageExpanded"></span>
              <span ng-if="!messageExpanded"
                    class="failure-line-message-collapsed">{{ line.message }}</span>
              <span ng-if="messageExpanded"
@@ -39,36 +39,38 @@
         CRASH | {{line.signature}}
       </span>
 
-      <ul class="list-unstyled classification-options">
-        <!--classifications for line-->
-        <li ng-repeat="classification in lineClassificationOptions[line.id]" >
-          <label>
-            <input type="radio"
-                   value="{{classification.id}}"
-                   name="{{::line.id}}"
-                   ng-model="lineBest[line.id]" />
-            <span ng-if="classification.best" class="glyphicon glyphicon-star-empty"></span>
-            <a href="{{::getBugUrl(classification.bug_number) }}"
-               ng-if="classification.bug_number"
-               target="_blank">{{::classification.bug_number}}
-              <span ng-bind-html="classification.bug_summary | escapeHTML"></span>
-            </a>
-            <span ng-if="classification.best && !classification.bug_number">
-              <input class="manual-bug-input"
-                     type="text"
-                     ng-model="manualBugs[line.id]"/>
+      <span ng-if="line.best_is_verified">
+            <span class="glyphicon glyphicon-star-empty"></span>
+            <span class="line-option-text" ng-if="line.best.bug_number">
+              <a href="{{::getBugUrl(line.best.bug_number) }}"
+                 target="_blank">Bug {{::line.best.bug_number}} - <span ng-bind-html="line.best.bug_summary | escapeHTML"></span>
+              </a>
             </span>
 
-            <!--enter bug manually-->
-            <span ng-if="classification.id === 'manual'">
-              <input ng-if="lineBest[line.id] === 'manual'"
-                     class="manual-bug-input"
-                     type="text"
-                     ng-model="manualBugs[line.id]"/>
-              <span ng-if="lineBest[line.id] !== 'manual'"
-                    class="manual-bug-label lightgray"><em>Enter a bug number</em></span>
+      </span>
+      <ul class="list-unstyled"
+          ng-if="!line.best_is_verified">
+        <!--classification options for line-->
+        <li ng-repeat="option in lineClassificationOptions[line.id]" >
+          <span ng-class="{'classification-options-best': option.best, 'classification-options': !option.best}">
+            <span ng-if="option.best" class="glyphicon glyphicon-star-empty"></span>
+            <input type="radio"
+                   value="{{option.id}}"
+                   name="{{::line.id}}"
+                   ng-model="lineSelection[line.id]" />
+            <span class="line-option-text" ng-if="option.bug_number">
+              <a href="{{::getBugUrl(option.bug_number) }}"
+                 target="_blank">Bug {{::option.bug_number}} - <span ng-bind-html="option.bug_summary | escapeHTML"></span>
+              </a>
             </span>
-          </label>
+              <span ng-if="!option.bug_number">
+                <input class="manual-bug-input"
+                       type="text"
+                       placeholder="Enter a bug number"
+                       title="This 'best match' does not yet have a bug number.  Please enter one."
+                       ng-model="manualBugs[line.id]"/>
+              </span>
+          </span>
         </li>
       </ul>
     </li>

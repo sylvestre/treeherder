@@ -506,6 +506,11 @@ div.talos-panel {
 
 .classification-options {
   padding: 0 0 0 18px;
+  display: inline-flex;
+}
+
+.classification-options-best {
+  padding: 0 0 0 3px;
 }
 
 .manual-bug-input {
@@ -513,4 +518,8 @@ div.talos-panel {
 }
 .manual-bug-label {
   line-height: 15pt;
+}
+
+.line-option-text {
+  padding: 4px 0 0 4px;
 }

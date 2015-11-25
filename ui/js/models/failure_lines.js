@@ -1,8 +1,8 @@
 'use strict';
 
 treeherder.factory('ThFailureLinesModel', [
-    '$rootScope', '$http', 'ThLog', 'thUrl', 'ThClassifiedFailuresModel', 'thNotify', '$q',
-    function($rootScope, $http, ThLog, thUrl, ThClassifiedFailuresModel, thNotify, $q) {
+    '$rootScope', '$http', 'ThLog', 'thUrl', 'thNotify', '$q',
+    function($rootScope, $http, ThLog, thUrl, thNotify, $q) {
 
         var ThFailureLinesModel = function(data) {
             angular.extend(this, data);
@@ -30,23 +30,10 @@ treeherder.factory('ThFailureLinesModel', [
             });
         };
 
-        ThFailureLinesModel.verify = function(line_id, bug_number) {
-            return ThClassifiedFailuresModel.get_or_create_for_bug(bug_number)
-                .then(function(response) {
-                    console.log(response.data);
-                    if (response.data.length > 1) {
-                        thNotify.send("got too many classified_failures", "danger", true);
-                        return $q.reject("got too many classified_failures");
-                    } else {
-                        return $http.put(thUrl.getRootUrl("/failure-line/" + line_id + "/"),
-                                         {project: $rootScope.repoName,
-                                          best_classification: response.data[0].id});
-                    }
-
-                }, function(error) {
-                    thNotify.send("Can't verify without a classification for bug " + bug_number, "danger", true);
-                    return $q.reject();
-                });
+        ThFailureLinesModel.verify = function(line_id, best_classification) {
+            return $http.put(thUrl.getRootUrl("/failure-line/" + line_id + "/"),
+                             {project: $rootScope.repoName,
+                              best_classification: best_classification});
         };
 
         return ThFailureLinesModel;

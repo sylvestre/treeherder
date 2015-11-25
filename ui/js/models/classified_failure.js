@@ -30,12 +30,16 @@ treeherder.factory('ThClassifiedFailuresModel', [
             });
         };
 
-        ThClassifiedFailuresModel.get_or_create_for_bug = function(bug_number) {
-            // todo: camd: make this do the right thing once jgraham implements it on the back-end.
-            return $http.post(
-                ThClassifiedFailuresModel.get_url(),
-                {bug_number: bug_number}
+        ThClassifiedFailuresModel.create = function(bug_number) {
+            return $http.post(ThClassifiedFailuresModel.get_url(),
+                              {bug_number: bug_number}
             );
+        };
+
+        ThClassifiedFailuresModel.prototype.update = function(bug_number) {
+            var classified_failure = this;
+            classified_failure.bug_number = bug_number;
+            return $http.put(ThClassifiedFailuresModel.get_url(), classified_failure);
         };
 
         return ThClassifiedFailuresModel;

@@ -87,10 +87,10 @@ treeherder.controller('ClassificationPluginCtrl', [
                     // theoretically, however unlikely, it could
                     // conflict with a classified_failure id.
                     var ubid = "ub-" + bug.id;
-                    bug.type = "unstructured_bug";
                     line.ui.options.push({id: ubid,
-                                  bug_number: bug.id,
-                                  bug_summary: bug.summary});
+                                          bug_number: bug.id,
+                                          bug_summary: bug.summary,
+                                          type: "unstructured_bug"});
 
                 });
 
@@ -154,13 +154,14 @@ treeherder.controller('ClassificationPluginCtrl', [
             if (cf.bug_number !== bug_number) {
                 // need to update the bug number on it
                 var model = new ThClassifiedFailuresModel(cf);
-                model.update(bug_number).then(function(updated_cf) {
-                    // got the updated cf, now need to verify the line
-                    verifyLine(line, updated_cf);
-                },
-                                              function(error) {
-                                                  thNotify.send(error, "danger", true);
-                                              });
+                model.update(bug_number).then(
+                    function(updated_cf_resp) {
+                        // got the updated cf, now need to verify the line
+                        verifyLine(line, updated_cf_resp.data);
+                    },
+                    function(error) {
+                        thNotify.send(error, "danger", true);
+                    });
             } else {
                 verifyLine(line, cf);
             }

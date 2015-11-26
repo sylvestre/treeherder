@@ -39,7 +39,8 @@ treeherder.factory('ThClassifiedFailuresModel', [
         ThClassifiedFailuresModel.prototype.update = function(bug_number) {
             var classified_failure = this;
             classified_failure.bug_number = bug_number;
-            return $http.put(ThClassifiedFailuresModel.get_url(), classified_failure);
+            return $http.put(ThClassifiedFailuresModel.get_url() + classified_failure.id + "/",
+                             {bug_number: bug_number});
         };
 
         return ThClassifiedFailuresModel;

@@ -18,7 +18,8 @@ def test_get_classified_failure(webapp, classified_failures):
     assert resp.status_int == 200
     actual = resp.json
     expected = {"id": classified_failures[0].id,
-                "bug_number": 1234}
+                "bug_number": 1234,
+                "bug": None}
 
     assert actual == expected
 
@@ -32,7 +33,8 @@ def test_get_classified_failures(webapp, classified_failures):
 
     actual = resp.json
     expected = [{"id": cf.id,
-                 "bug_number": cf.bug_number} for cf in classified_failures]
+                 "bug_number": cf.bug_number,
+                 "bug": None} for cf in classified_failures]
     assert actual == expected
 
 
@@ -45,7 +47,8 @@ def test_get_classified_failures_bug(webapp, classified_failures):
 
     actual = resp.json
     expected = [{"id": classified_failures[0].id,
-                 "bug_number": classified_failures[0].bug_number}]
+                 "bug_number": classified_failures[0].bug_number,
+                 "bug": None}]
     assert actual == expected
 
 
@@ -64,7 +67,8 @@ def test_post_new_classified_failure(webapp, classified_failures):
 
     actual = resp.data
     expected = {"id": classified_failures[-1].id + 1,
-                "bug_number": 5678}
+                "bug_number": 5678,
+                "bug": None}
     assert actual == expected
 
     obj = ClassifiedFailure.objects.get(id=actual["id"])
@@ -86,7 +90,8 @@ def test_post_repeated_classified_failure(webapp, classified_failures):
 
     actual = resp.data
     expected = {"id": classified_failures[0].id,
-                "bug_number": 1234}
+                "bug_number": 1234,
+                "bug": None}
     assert actual == expected
 
 
@@ -106,7 +111,8 @@ def test_put_new_bug_number(webapp, classified_failures):
 
     actual = resp.data
     expected = {"id": classified_failures[0].id,
-                "bug_number": 5678}
+                "bug_number": 5678,
+                "bug": None}
     assert actual == expected
 
     classified_failures[0].refresh_from_db()
@@ -129,7 +135,8 @@ def test_put_existing_bug_number(webapp, classified_failures):
 
     actual = resp.data
     expected = {"id": classified_failures[0].id,
-                "bug_number": 1234}
+                "bug_number": 1234,
+                "bug": None}
     assert actual == expected
 
     classified_failures[0].refresh_from_db()
@@ -149,3 +156,30 @@ def test_put_duplicate_bug_number(webapp, classified_failures):
                       {"bug_number": 1234}, format="json")
 
     assert resp.status_code == 400
+
+
+def test_get_with_bug(webapp, classified_failures, bugs):
+    """
+    test getting a single failure line
+    """
+    bug = bugs[0]
+    classified_failures[0].bug_number = bug.id
+    classified_failures[0].save()
+
+    resp = webapp.get(
+        reverse("classified-failure-detail", kwargs={"pk": classified_failures[0].id}))
+
+    assert resp.status_int == 200
+    actual = resp.json
+    expected = {"id": classified_failures[0].id,
+                "bug_number": bug.id,
+                "bug": {"status": bug.status,
+                        "id": bug.id,
+                        "summary": bug.summary,
+                        "crash_signature": bug.crash_signature,
+                        "keywords": bug.keywords,
+                        "resolution": bug.resolution,
+                        "os": bug.os,
+                        "modified": bug.modified.isoformat()}}
+
+    assert actual == expected

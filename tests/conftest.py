@@ -487,3 +487,37 @@ def client_credentials(request, api_user):
 def mock_autoclassify_jobs_true(monkeypatch):
     from django.conf import settings
     monkeypatch.setattr(settings, 'AUTOCLASSIFY_JOBS', True)
+
+
+@pytest.fixture
+def mock_extract(monkeypatch):
+    """
+    mock BzApiBugProcess._get_bz_source_url() to return
+    a local sample file
+    """
+    from treeherder.etl.bugzilla import BzApiBugProcess
+
+    def extract(obj, url):
+        tests_folder = os.path.dirname(__file__)
+        bug_list_path = os.path.join(
+            tests_folder,
+            "sample_data",
+            "bug_list.json"
+        )
+        with open(bug_list_path) as f:
+            return json.loads(f.read())
+
+    monkeypatch.setattr(BzApiBugProcess,
+                        'extract',
+                        extract)
+
+
+@pytest.fixture
+def bugs(mock_extract):
+    from treeherder.etl.bugzilla import BzApiBugProcess
+    from treeherder.model.models import Bugscache
+
+    process = BzApiBugProcess()
+    process.run()
+
+    return Bugscache.objects.all()

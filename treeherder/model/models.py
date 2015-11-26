@@ -671,6 +671,14 @@ class ClassifiedFailure(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
+    def bug(self):
+        # Putting this here forces one query per object; there should be a way
+        # to make things more efficient
+        try:
+            return Bugscache.objects.get(id=self.bug_number)
+        except Bugscache.DoesNotExist:
+            return None
+
     # TODO: add indexes once we know which queries will be typically executed
 
     class Meta:

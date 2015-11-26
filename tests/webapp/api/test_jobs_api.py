@@ -240,7 +240,7 @@ def test_job_error_lines(webapp, eleven_jobs_stored, jm, failure_lines, classifi
     classified = failures[0]["classified_failures"][0]
     assert isinstance(classified, dict)
 
-    exp_classified_keys = ["id", "bug_number"]
+    exp_classified_keys = ["id", "bug_number", "bug"]
 
     assert set(classified.keys()) == set(exp_classified_keys)
 

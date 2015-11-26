@@ -61,8 +61,11 @@ treeherder.controller('ClassificationPluginCtrl', [
                 // that in later.
                 _.forEach(line.classified_failures, function(cf) {
                     if (cf.bug_number !== null) {
-                        cf.type = "classified_failure";
-                        line.ui.options.push(cf);
+                        var bug_summary = cf.bug ? cf.bug.summary : "";
+                        line.ui.options.push({id: cf.id,
+                                              bug_number: cf.id,
+                                              bug_summary: bug_summary,
+                                              type: "classified_failure"});
                     }
                 });
 
@@ -74,6 +77,7 @@ treeherder.controller('ClassificationPluginCtrl', [
 
                     best.is_best = true;
                     best.type = "classified_failure";
+                    best.bug_summary = best.bug ? best.bug.summary : "";
 
                     // move the best one to the top
                     line.ui.options = _.without(line.ui.options, best);

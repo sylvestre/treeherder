@@ -504,18 +504,26 @@ div.talos-panel {
   font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
 }
 
-.classification-options {
-  padding-left: 18px;
+.classification-options{
   display: inline-flex;
 }
 
-.classification-options-best {
+.classification-options > *:first-child {
   padding-left: 6px;
-  display: inline-flex;
+  padding-right: 3px;
 }
 
 .best-classification-star {
   align-self: center;
+}
+
+.classification-set-bug {
+  align-self: center;
+  cursor: pointer;
+}
+
+.classification-no-icon {
+  width: 18px;
 }
 
 .manual-bug-input {

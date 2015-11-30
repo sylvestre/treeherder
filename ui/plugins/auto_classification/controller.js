@@ -103,14 +103,24 @@ treeherder.controller('ClassificationPluginCtrl', [
                     line.ui.options.push({
                         id: "manual",
                         type: "unstructured_bug",
-                        bug_number: null
+                        bug_number: null,
                     });
                 }
+
+                _.forEach(line.ui.options, function(option) {
+                    option.icon_type = option.is_best ? "autoclassified" :
+                        (line.ui.best && !line.ui.best.bug_number && option.bug_number ?
+                         'set_bug' : 'none');
+                });
 
                 // choose first in list as lineSelection
                 line.ui.selectedOption = 0;
             });
 
+        };
+
+        $scope.setAutoclassifiedBugNumber = function(line, bug_number) {
+            $scope.manualBugs[line.id] = bug_number;
         };
 
         $scope.getSaveButtonText = function(line) {

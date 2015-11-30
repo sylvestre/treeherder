@@ -39,23 +39,30 @@
         CRASH | {{line.signature}}
       </span>
 
-      <span ng-if="line.best_is_verified">
-            <span class="glyphicon glyphicon-star-empty best-classification-star"></span>
+      <div ng-if="line.best_is_verified">
+            <span class="glyphicon glyphicon-star best-classification-star"></span>
             <span class="line-option-text" ng-if="line.ui.best.bug_number">
               <a href="{{::getBugUrl(line.ui.best.bug_number) }}"
                  target="_blank">Bug {{::line.ui.best.bug_number}} - <span ng-bind-html="line.ui.best.bug_summary | escapeHTML"></span>
               </a>
             </span>
+      </div>
 
-      </span>
       <ul class="list-unstyled"
           ng-if="!line.best_is_verified">
         <!--classification options for line-->
         <li ng-repeat="option in line.ui.options" >
-          <span ng-class="{'classification-options-best': option.is_best, 'classification-options': !option.is_best}">
-            <span ng-if="option.is_best"
+          <span class="classification-options">
+            <span ng-if="option.icon_type == 'autoclassified'"
                   class="glyphicon glyphicon-star-empty best-classification-star"
                   title="This is the option Treeherder chose as the best"></span>
+            <span ng-if="option.icon_type == 'set_bug'"
+                  class="glyphicon glyphicon-pushpin classification-set-bug"
+                  ng-click="setAutoclassifiedBugNumber(line, option.bug_number)"
+                  title="Use bug number for best classification"
+                  ></span>
+            <span ng-if="option.icon-type == 'none'"
+                  class="classification-no-icon">&nbsp;</span>
             <input type="radio"
                    value="{{$index}}"
                    name="{{::line.id}}"

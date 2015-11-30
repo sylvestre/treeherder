@@ -183,3 +183,80 @@ def test_get_with_bug(webapp, classified_failures, bugs):
                         "modified": bug.modified.isoformat()}}
 
     assert actual == expected
+
+
+def test_put_multiple(webapp, classified_failures):
+    client = APIClient()
+    user = User.objects.create(username="MyName")
+    client.force_authenticate(user=user)
+
+    classified_failures[0].bug_number = 1234
+    classified_failures[0].save()
+
+    resp = client.put(reverse("classified-failure-update-many"),
+                      [{"id": classified_failures[0].id, "bug_number": 5678},
+                       {"id": classified_failures[1].id, "bug_number": 9012}],
+                      format="json")
+
+    assert resp.status_code == 200
+
+    actual = resp.data
+    expected = [{"id": classified_failures[0].id,
+                 "bug_number": 5678,
+                 "bug": None},
+                {"id": classified_failures[1].id,
+                 "bug_number": 9012,
+                 "bug": None}]
+    assert actual == expected
+
+    classified_failures[0].refresh_from_db()
+    assert classified_failures[0].bug_number == 5678
+    classified_failures[1].refresh_from_db()
+    assert classified_failures[1].bug_number == 9012
+
+
+def test_put_multiple_repeat(webapp, classified_failures):
+    client = APIClient()
+    user = User.objects.create(username="MyName")
+    client.force_authenticate(user=user)
+
+    classified_failures[0].bug_number = 1234
+    classified_failures[0].save()
+
+    resp = client.put(reverse("classified-failure-update-many"),
+                      [{"id": classified_failures[0].id, "bug_number": 1234},
+                       {"id": classified_failures[1].id, "bug_number": 5678}],
+                      format="json")
+
+    assert resp.status_code == 200
+
+    actual = resp.data
+    assert len(actual) == 2
+    expected = [{"id": classified_failures[0].id,
+                 "bug_number": 1234,
+                 "bug": None},
+                {"id": classified_failures[1].id,
+                 "bug_number": 5678,
+                 "bug": None}]
+    assert actual == expected
+
+    classified_failures[0].refresh_from_db()
+    assert classified_failures[0].bug_number == 1234
+    classified_failures[1].refresh_from_db()
+    assert classified_failures[1].bug_number == 5678
+
+
+def test_put_multiple_duplicate(webapp, classified_failures):
+    client = APIClient()
+    user = User.objects.create(username="MyName")
+    client.force_authenticate(user=user)
+
+    classified_failures[0].bug_number = 1234
+    classified_failures[0].save()
+
+    resp = client.put(reverse("classified-failure-update-many"),
+                      [{"id": classified_failures[0].id, "bug_number": 5678},
+                       {"id": classified_failures[1].id, "bug_number": 1234}],
+                      format="json")
+
+    assert resp.status_code == 400

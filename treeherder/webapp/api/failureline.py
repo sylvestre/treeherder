@@ -12,10 +12,7 @@ from treeherder.model.models import (ClassifiedFailure,
                                      FailureMatch,
                                      Matcher)
 from treeherder.webapp.api import serializers
-
-
-def as_dict(queryset, key):
-    return {getattr(item, key): item for item in queryset}
+from treeherder.webapp.api.utils import as_dict
 
 
 class FailureLineViewSet(viewsets.ViewSet):

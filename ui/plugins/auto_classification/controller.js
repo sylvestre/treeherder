@@ -128,7 +128,7 @@ treeherder.controller('ClassificationPluginCtrl', [
         };
 
         $scope.canSaveAll = function(line) {
-            return _.every($scope.failureLines, (line) => $scope.canSave(line));
+            return _.every($scope.failureLines, function(line) {return $scope.canSave(line);});
         };
 
         $scope.getSaveButtonText = function(line) {
@@ -166,22 +166,23 @@ treeherder.controller('ClassificationPluginCtrl', [
 
             var byType = _.partition(
                 failureLines,
-                (line) => (
-                    line.ui.options[line.ui.selectedOption].type == "classified_failure"));
+                function(line) {
+                    return line.ui.options[line.ui.selectedOption].type == "classified_failure";
+                });
 
             var autoclassified = byType[0];
             var unstructured = byType[1];
 
             var byHasBug = _.partition(
                 autoclassified,
-                (line) => !!line.ui.options[line.ui.selectedOption].bug_number);
+                function(line) {return !!line.ui.options[line.ui.selectedOption].bug_number;});
 
             var hasBug = byHasBug[0];
             var toCreateBug = byHasBug[1];
 
             var updateClassifications = _.map(
                 toCreateBug,
-                (line) => {
+                function(line) {
                     return {id: line.ui.options[line.ui.selectedOption].id,
                             bug_number: $scope.manualBugs[line.id]};
                 }
@@ -189,7 +190,7 @@ treeherder.controller('ClassificationPluginCtrl', [
 
             var newClassifications = _.map(
                 unstructured,
-                (line) => {
+                function(line) {
                     var option = line.ui.options[line.ui.selectedOption];
                     var bug_number = option.bug_number ? option.bug_number : $scope.manualBugs[line.id];
                     return {bug_number: bug_number};
@@ -197,39 +198,41 @@ treeherder.controller('ClassificationPluginCtrl', [
             );
 
             // Map of failure line id to best classified failure id
-            var bestClassifications = _.map(hasBug, (line) => {
-                return {
-                    id: line.id,
-                    best_classification: line.ui.options[line.ui.selectedOption].id
-                };
-            });
+            var bestClassifications = _.map(
+                hasBug,
+                function (line) {
+                    return {
+                        id: line.id,
+                        best_classification: line.ui.options[line.ui.selectedOption].id
+                    };
+                });
 
             function updateBestClassifications(lines, classifiedFailures) {
                 bestClassifications = _.union(
                     bestClassifications,
                     _.map(_.zip(lines, classifiedFailures),
-                          (item) => {
+                          function(item) {
                               return {id: item[0].id,
                                       best_classification: item[1].id};
                           }));
             }
 
             ThClassifiedFailuresModel.createMany(newClassifications)
-                .then((resp) => {
+                .then(function(resp) {
                     if (resp) {
                         updateClassifiedFailures(unstructured, resp.data);
                     }
                 })
-                .then(() => ThClassifiedFailuresModel.updateMany(classifications))
-                .then((resp) => {
+                .then(function() {return ThClassifiedFailuresModel.updateMany(classifications);})
+                .then(function(resp) {
                     if (resp) {
                         updateClassifiedFailures(resp.data);
                     }
                 })
-                .then(() => ThFailureLinesModel.verifyMany(bestClassifications))
-                .then(() => thNotify.send("Classifications saved", "success"))
-                .catch(() => thNotify.send("Error saving classifications", "danger"))
-                .then(() => thTabs.tabs.autoClassification.update());
+                .then(function() {return ThFailureLinesModel.verifyMany(bestClassifications);})
+                .then(function() {thNotify.send("Classifications saved", "success");})
+                .catch(function() {thNotify.send("Error saving classifications", "danger");})
+                .then(function() {thTabs.tabs.autoClassification.update();});
         };
 
         var verifyLine = function(line, cf) {

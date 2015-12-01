@@ -31,14 +31,28 @@ class ClassifiedFailureViewSet(viewsets.ModelViewSet):
 
         return Response(self.serializer_class(obj).data)
 
+    def _create(self, data, many=False):
+        rv = []
+
+        for item in data:
+            bug = item.get('bug_number')
+            if bug:
+                obj, _ = ClassifiedFailure.objects.get_or_create(bug_number=bug)
+            else:
+                obj = ClassifiedFailure()
+            obj.save()
+            rv.append(obj)
+
+        if not many:
+            rv = rv[0]
+
+        return self.serializer_class(rv, many=many).data
+
     def create(self, request):
-        bug = request.data.get('bug_number')
-        if bug:
-            obj, _ = ClassifiedFailure.objects.get_or_create(bug_number=bug)
-        else:
-            obj = ClassifiedFailure()
-        obj.save()
-        return Response(self.serializer_class(obj).data)
+        if isinstance(request.data, list):
+            return Response(self._create(request.data, many=True))
+
+        return Response(self._create([request.data], many=False))
 
     def _update(self, data, many=False):
         bug_numbers = {}

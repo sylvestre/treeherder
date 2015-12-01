@@ -77,6 +77,33 @@ def test_post_new_classified_failure(webapp, classified_failures):
     assert obj.bug_number == 5678
 
 
+def test_post_multiple(webapp, classified_failures):
+    client = APIClient()
+    user = User.objects.create(username="MyName")
+    client.force_authenticate(user=user)
+
+    classified_failures[0].bug_number = 1234
+    classified_failures[0].save()
+
+    resp = client.post(reverse("classified-failure-list"),
+                       [{"bug_number": 5678}, {"bug_number": 9012}], format="json")
+
+    assert resp.status_code == 200
+
+    actual = resp.data
+    expected = [{"id": classified_failures[-1].id + 1,
+                 "bug_number": 5678,
+                 "bug": None},
+                {"id": classified_failures[-1].id + 2,
+                 "bug_number": 9012,
+                 "bug": None}]
+    assert actual == expected
+
+    for idx in range(0, 2):
+        obj = ClassifiedFailure.objects.get(id=actual[idx]["id"])
+        assert obj.bug_number == [5678, 9012][idx]
+
+
 def test_post_repeated_classified_failure(webapp, classified_failures):
     client = APIClient()
     user = User.objects.create(username="MyName")

@@ -8,6 +8,7 @@
       <button ng-if="!line.best_is_verified"
               class="btn btn-xs btn-default"
               title="Select best match and click here"
+              ng-disabled="!canSave(line)"
               ng-click="save(line)">{{getSaveButtonText(line)}}</button>
       <span ng-if="line.best_is_verified"
             class="label label-xs label-primary"
@@ -61,7 +62,7 @@
                   ng-click="setAutoclassifiedBugNumber(line, option.bug_number)"
                   title="Use bug number for best classification"
                   ></span>
-            <span ng-if="option.icon-type == 'none'"
+            <span ng-if="option.icon_type == 'none'"
                   class="classification-no-icon">&nbsp;</span>
             <input type="radio"
                    value="{{$index}}"

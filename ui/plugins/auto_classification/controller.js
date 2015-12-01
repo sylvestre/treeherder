@@ -123,11 +123,21 @@ treeherder.controller('ClassificationPluginCtrl', [
             $scope.manualBugs[line.id] = bug_number;
         };
 
+        $scope.canSave = function(line) {
+            return line.ui.options[line.ui.selectedOption].bug_number || $scope.manualBugs[line.id]
+        }
+
+        $scope.canSaveAll = function(line) {
+            return _.every($scope.failureLines, (line) => $scope.canSave(line))
+        }
+
         $scope.getSaveButtonText = function(line) {
             if (line.best_classification === line.ui.options[line.ui.selectedOption].id) {
                 return "Verify";
+            } else if (line.best_classification) {
+                return "Override";
             } else {
-                return "Save";
+                return "Create";
             }
         };
 

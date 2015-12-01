@@ -2,6 +2,12 @@
      class="error-classification-content">
   <ul class="list-unstyled failure-line-list">
 
+    <button ng-if="failureLines"
+            class="btn btn-xs btn-default"
+            title="Save All"
+            ng-disabled="!canSaveAll(line)"
+            ng-click="saveAll()">Save All</button>
+
     <li ng-repeat="line in failureLines"
         class="failure-line"
         ng-class="{'classified-line': line.best_classification }">

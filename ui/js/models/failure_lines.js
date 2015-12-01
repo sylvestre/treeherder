@@ -35,5 +35,12 @@ treeherder.factory('ThFailureLinesModel', [
                              {best_classification: best_classification});
         };
 
+        ThFailureLinesModel.verifyMany = function(data) {
+            if (!data.length) {
+                return Promise.resolve();
+            }
+            return $http.put(thUrl.getRootUrl("/failure-line/"), data);
+        };
+
         return ThFailureLinesModel;
     }]);

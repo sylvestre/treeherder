@@ -161,6 +161,77 @@ treeherder.controller('ClassificationPluginCtrl', [
 
         };
 
+        $scope.saveAll = function() {
+            var failureLines = $scope.failureLines;
+
+            var byType = _.partition(
+                failureLines,
+                (line) => (
+                    line.ui.options[line.ui.selectedOption].type == "classified_failure"));
+
+            var autoclassified = byType[0];
+            var unstructured = byType[1];
+
+            var byHasBug = _.partition(
+                autoclassified,
+                (line) => !!line.ui.options[line.ui.selectedOption].bug_number);
+
+            var hasBug = byHasBug[0]
+            var toCreateBug = byHasBug[1];
+
+            var updateClassifications = _.map(
+                toCreateBug,
+                (line) => {
+                    return {id: line.ui.options[line.ui.selectedOption].id,
+                            bug_number: $scope.manualBugs[line.id]}
+                }
+            );
+
+            var newClassifications = _.map(
+                unstructured,
+                (line) => {
+                    var option = line.ui.options[line.ui.selectedOption];
+                    var bug_number = option.bug_number ? option.bug_number : $scope.manualBugs[line.id];
+                    return {bug_number: bug_number}
+                }
+            );
+
+            // Map of failure line id to best classified failure id
+            var bestClassifications = _.map(hasBug, (line) => {
+                return {
+                    id: line.id,
+                    best_classification: line.ui.options[line.ui.selectedOption].id
+                }
+            });
+
+            function updateBestClassifications(lines, classifiedFailures) {
+                bestClassifications = _.union(
+                    bestClassifications,
+                    _.map(_.zip(lines, classifiedFailures),
+                          (item) => {
+                              return {id: item[0].id,
+                                      best_classification: item[1].id};
+                          }));
+            }
+
+            ThClassifiedFailuresModel.createMany(newClassifications)
+                .then((resp) => {
+                    if (resp) {
+                        updateClassifiedFailures(unstructured, resp.data);
+                    }
+                })
+                .then(() => ThClassifiedFailuresModel.updateMany(classifications))
+                .then((resp) => {
+                    if (resp) {
+                        updateClassifiedFailures(resp.data);
+                    }
+                })
+                .then(() => ThFailureLinesModel.verifyMany(bestClassifications))
+                .then(() => thNotify.send("Classifications saved", "success"))
+                .catch(() => thNotify.send("Error saving classifications", "danger"))
+                .then(() => thTabs.tabs.autoClassification.update());
+        }
+
         var verifyLine = function(line, cf) {
             ThFailureLinesModel.verify(line.id, cf.id)
                 .then(function (response) {

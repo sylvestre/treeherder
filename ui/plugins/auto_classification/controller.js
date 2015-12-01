@@ -124,12 +124,12 @@ treeherder.controller('ClassificationPluginCtrl', [
         };
 
         $scope.canSave = function(line) {
-            return line.ui.options[line.ui.selectedOption].bug_number || $scope.manualBugs[line.id]
-        }
+            return line.ui.options[line.ui.selectedOption].bug_number || $scope.manualBugs[line.id];
+        };
 
         $scope.canSaveAll = function(line) {
-            return _.every($scope.failureLines, (line) => $scope.canSave(line))
-        }
+            return _.every($scope.failureLines, (line) => $scope.canSave(line));
+        };
 
         $scope.getSaveButtonText = function(line) {
             if (line.best_classification === line.ui.options[line.ui.selectedOption].id) {
@@ -176,14 +176,14 @@ treeherder.controller('ClassificationPluginCtrl', [
                 autoclassified,
                 (line) => !!line.ui.options[line.ui.selectedOption].bug_number);
 
-            var hasBug = byHasBug[0]
+            var hasBug = byHasBug[0];
             var toCreateBug = byHasBug[1];
 
             var updateClassifications = _.map(
                 toCreateBug,
                 (line) => {
                     return {id: line.ui.options[line.ui.selectedOption].id,
-                            bug_number: $scope.manualBugs[line.id]}
+                            bug_number: $scope.manualBugs[line.id]};
                 }
             );
 
@@ -192,7 +192,7 @@ treeherder.controller('ClassificationPluginCtrl', [
                 (line) => {
                     var option = line.ui.options[line.ui.selectedOption];
                     var bug_number = option.bug_number ? option.bug_number : $scope.manualBugs[line.id];
-                    return {bug_number: bug_number}
+                    return {bug_number: bug_number};
                 }
             );
 
@@ -201,7 +201,7 @@ treeherder.controller('ClassificationPluginCtrl', [
                 return {
                     id: line.id,
                     best_classification: line.ui.options[line.ui.selectedOption].id
-                }
+                };
             });
 
             function updateBestClassifications(lines, classifiedFailures) {
@@ -230,7 +230,7 @@ treeherder.controller('ClassificationPluginCtrl', [
                 .then(() => thNotify.send("Classifications saved", "success"))
                 .catch(() => thNotify.send("Error saving classifications", "danger"))
                 .then(() => thTabs.tabs.autoClassification.update());
-        }
+        };
 
         var verifyLine = function(line, cf) {
             ThFailureLinesModel.verify(line.id, cf.id)

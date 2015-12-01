@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from rest_framework.test import APIClient
 
+from tests.autoclassify.utils import (create_failure_lines,
+                                      test_line)
 from treeherder.model.models import ClassifiedFailure
 
 
@@ -260,3 +262,30 @@ def test_put_multiple_duplicate(webapp, classified_failures):
                       format="json")
 
     assert resp.status_code == 400
+
+
+def test_get_matching_lines(webapp, test_repository, failure_lines, classified_failures):
+    """
+    test getting a single failure line
+    """
+
+    for failure_line in failure_lines:
+        failure_line.best_classification = classified_failures[0]
+        failure_line.save()
+
+    extra_lines = create_failure_lines(test_repository,
+                                       failure_lines[0].job_guid,
+                                       [(test_line, {"test": "test2", "line": 2}),
+                                        (test_line, {"test": "test2", "subtest": "subtest2",
+                                                     "line": 3})])
+
+    extra_lines[1].best_classification = classified_failures[1]
+    extra_lines[1].save()
+
+    resp = webapp.get(
+        reverse("classified-failure-matching-lines", kwargs={"pk": classified_failures[0].id}))
+
+    assert resp.status_int == 200
+    actual = resp.json
+
+    assert [item["id"] for item in actual] == [item.id for item in failure_lines]

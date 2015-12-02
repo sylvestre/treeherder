@@ -189,7 +189,7 @@ def test_update_failure_lines(eleven_jobs_stored,
     for failure_line in failure_lines:
         assert failure_line.best_is_verified is False
 
-    resp = client.put(reverse("failure-line-update-many"), body, format="json")
+    resp = client.put(reverse("failure-line-list"), body, format="json")
 
     assert resp.status_code == 200
 

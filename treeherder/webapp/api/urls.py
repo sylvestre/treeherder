@@ -1,3 +1,5 @@
+import copy
+
 from django.conf.urls import (include,
                               url)
 from rest_framework import routers
@@ -82,10 +84,15 @@ project_bound_router.register(
     performance_data.PerformancePlatformViewSet,
     base_name='performance-signatures-platforms')
 
+
 # this is the default router for plain restful endpoints
+class ExtendedRouter(routers.DefaultRouter):
+    routes = copy.deepcopy(routers.DefaultRouter.routes)
+    routes[0].mapping[u"put"] = u"update_many"
+
 
 # refdata endpoints:
-default_router = routers.DefaultRouter()
+default_router = ExtendedRouter()
 default_router.register(r'product', refdata.ProductViewSet)
 default_router.register(r'machine', refdata.MachineViewSet)
 default_router.register(r'machineplatform', refdata.MachinePlatformViewSet)

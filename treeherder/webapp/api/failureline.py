@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from django.db import transaction
 from rest_framework import viewsets
-from rest_framework.decorators import list_route
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
@@ -109,7 +108,6 @@ class FailureLineViewSet(viewsets.ViewSet):
 
         return Response(*self._update([data], request.user.email, many=False))
 
-    @list_route(methods=['put'])
     def update_many(self, request):
         body, status = self._update(request.data, request.user.email, many=True)
 

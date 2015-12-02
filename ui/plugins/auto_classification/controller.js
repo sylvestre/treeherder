@@ -228,7 +228,7 @@ treeherder.controller('ClassificationPluginCtrl', [
                 })
                 .then(function(resp) {
                     if (resp) {
-                        updateBestClassifications(resp.data);
+                        updateBestClassifications(toCreateBug, resp.data);
                     }
                 })
                 .then(function() {return ThFailureLinesModel.verifyMany(bestClassifications);})

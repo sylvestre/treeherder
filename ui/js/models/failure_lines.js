@@ -1,8 +1,8 @@
 'use strict';
 
 treeherder.factory('ThFailureLinesModel', [
-    '$http', 'ThLog', 'thUrl', 'thNotify', '$q',
-    function($http, ThLog, thUrl, thNotify, $q) {
+    '$http', '$q', 'ThLog', 'thUrl', 'thNotify',
+    function($http, $q, ThLog, thUrl, thNotify) {
 
         var ThFailureLinesModel = function(data) {
             angular.extend(this, data);
@@ -37,7 +37,9 @@ treeherder.factory('ThFailureLinesModel', [
 
         ThFailureLinesModel.verifyMany = function(data) {
             if (!data.length) {
-                return Promise.resolve();
+                var p = $q.defer();
+                p.resolve();
+                return p.promise;
             }
             return $http.put(thUrl.getRootUrl("/failure-line/"), data);
         };

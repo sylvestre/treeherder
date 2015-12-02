@@ -1,8 +1,8 @@
 'use strict';
 
 treeherder.factory('ThClassifiedFailuresModel', [
-    '$http', 'ThLog', 'thUrl', 'thNotify',
-    function($http, ThLog, thUrl, thNotify) {
+    '$http', '$q', 'ThLog', 'thUrl', 'thNotify',
+    function($http, $q, ThLog, thUrl, thNotify) {
 
         var ThClassifiedFailuresModel = function(data) {
             angular.extend(this, data);
@@ -38,7 +38,9 @@ treeherder.factory('ThClassifiedFailuresModel', [
 
         ThClassifiedFailuresModel.createMany = function(data) {
             if (!data.length) {
-                return Promise.resolve();
+                var p = $q.defer();
+                p.resolve();
+                return p.promise;
             }
             return $http.post(ThClassifiedFailuresModel.get_url(), data);
         };

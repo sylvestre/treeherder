@@ -63,7 +63,7 @@ treeherder.controller('ClassificationPluginCtrl', [
                     if (cf.bug_number !== null) {
                         var bug_summary = cf.bug ? cf.bug.summary : "";
                         line.ui.options.push({id: cf.id,
-                                              bug_number: cf.id,
+                                              bug_number: cf.bug_number,
                                               bug_summary: bug_summary,
                                               type: "classified_failure"});
                     }
@@ -220,18 +220,20 @@ treeherder.controller('ClassificationPluginCtrl', [
             ThClassifiedFailuresModel.createMany(newClassifications)
                 .then(function(resp) {
                     if (resp) {
-                        updateClassifiedFailures(unstructured, resp.data);
+                        updateBestClassifications(unstructured, resp.data);
                     }
                 })
-                .then(function() {return ThClassifiedFailuresModel.updateMany(classifications);})
+                .then(function() {
+                    return ThClassifiedFailuresModel.updateMany(updateClassifications);
+                })
                 .then(function(resp) {
                     if (resp) {
-                        updateClassifiedFailures(resp.data);
+                        updateBestClassifications(resp.data);
                     }
                 })
                 .then(function() {return ThFailureLinesModel.verifyMany(bestClassifications);})
                 .then(function() {thNotify.send("Classifications saved", "success");})
-                .catch(function() {thNotify.send("Error saving classifications", "danger");})
+                .catch(function(err) {thNotify.send("Error saving classifications:\n " + err + err.stack, "danger");})
                 .then(function() {thTabs.tabs.autoClassification.update();});
         };
 

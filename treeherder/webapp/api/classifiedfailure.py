@@ -1,7 +1,6 @@
 import rest_framework_filters as filters
 from rest_framework import viewsets
-from rest_framework.decorators import (detail_route,
-                                       list_route)
+from rest_framework.decorators import detail_route
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
@@ -77,7 +76,8 @@ class ClassifiedFailureViewSet(viewsets.ModelViewSet):
 
         # The other option here would be to merge the classifications.
         existing = ClassifiedFailure.objects.filter(bug_number__in=bug_numbers.values()).all()
-        existing = [item for item in existing if item.id not in bug_numbers or item.bug_number != bug_numbers[item.id]]
+        existing = [item for item in existing
+                    if item.id not in bug_numbers or item.bug_number != bug_numbers[item.id]]
         if existing:
             return "Bug numbers %s already assigned to classified failures" % (
                 ", ".join(str(item.bug_number) for item in existing)), 400
@@ -102,7 +102,6 @@ class ClassifiedFailureViewSet(viewsets.ModelViewSet):
 
         return Response(*self._update([data], many=False))
 
-    @list_route(methods=['put'])
     def update_many(self, request):
         body, status = self._update(request.data, many=True)
 

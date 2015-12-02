@@ -222,7 +222,7 @@ def test_put_multiple(webapp, classified_failures):
     classified_failures[0].bug_number = 1234
     classified_failures[0].save()
 
-    resp = client.put(reverse("classified-failure-update-many"),
+    resp = client.put(reverse("classified-failure-list"),
                       [{"id": classified_failures[0].id, "bug_number": 5678},
                        {"id": classified_failures[1].id, "bug_number": 9012}],
                       format="json")
@@ -252,7 +252,7 @@ def test_put_multiple_repeat(webapp, classified_failures):
     classified_failures[0].bug_number = 1234
     classified_failures[0].save()
 
-    resp = client.put(reverse("classified-failure-update-many"),
+    resp = client.put(reverse("classified-failure-list"),
                       [{"id": classified_failures[0].id, "bug_number": 1234},
                        {"id": classified_failures[1].id, "bug_number": 5678}],
                       format="json")
@@ -283,7 +283,7 @@ def test_put_multiple_duplicate(webapp, classified_failures):
     classified_failures[0].bug_number = 1234
     classified_failures[0].save()
 
-    resp = client.put(reverse("classified-failure-update-many"),
+    resp = client.put(reverse("classified-failure-list"),
                       [{"id": classified_failures[0].id, "bug_number": 5678},
                        {"id": classified_failures[1].id, "bug_number": 1234}],
                       format="json")
